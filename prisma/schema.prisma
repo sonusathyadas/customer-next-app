@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Customer {
+    id          String   @id @default(uuid())
+    name        String
+    email       String   @unique
+    phone       String
+    address     String?
+    createdAt   DateTime @default(now())
+
+    // Relations
+    loans     Loan[]
+}
+
+model Loan {
+    id           String   @id @default(uuid())
+    customerId   String
+    loanType     LoanType
+    amount       Float
+    interestRate Float
+    status       LoanStatus @default(ACTIVE)
+    startDate    DateTime
+    endDate      DateTime
+
+    // Relations
+    customer Customer @relation(fields: [customerId], references: [id])
+    payments Payment[]
+}
+
+model Payment {
+    id          String   @id @default(uuid())
+    loanId      String
+    amountPaid  Float
+    paymentDate DateTime @default(now())
+    method      PaymentMethod
+
+    // Relations
+    loan Loan @relation(fields: [loanId], references: [id])
+}
+
+// Enums for controlled values
+enum LoanType {
+    HOME
+    CAR
+    PERSONAL
+    BUSINESS
+}
+
+enum LoanStatus {
+    ACTIVE
+    CLOSED
+    DEFAULTED
+}
+
+enum PaymentMethod {
+    CASH
+    CARD
+    BANKTRANSFER
+    UPI
+}
