@@ -1,29 +1,43 @@
 "use client";
 
 import { Customer } from "@/models/customer";
-import { useEffect, useState } from "react";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
+import  useSWR  from "swr";
+
+async function fetcher(url:string) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error fetching customers:", error);
+        return [];
+    }
+}
 
 export default function CustomersPage() {
-    const [customers, setCustomers] = useState<Customer[]>([]);
     const router = useRouter();
+    const { data, error, isLoading } = useSWR("/api/customers", fetcher);
 
-    useEffect(() => {
-        async function fetchCustomers() {
-            try {
-                const response = await fetch("/api/customers");
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log("Fetched customers:", data);
-                setCustomers(data);
-            } catch (error) {
-                console.error("Error fetching customers:", error);
-            }
-        }
-        fetchCustomers();
-    }, []);
+    if(isLoading){
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-gray-500 text-sm">Loading customers...</div>
+            </div>
+        );
+    }
+
+    if(error){
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-red-500 text-sm">Failed to load customers. Please try again later.</div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="min-h-screen bg-gray-50 p-6 sm:p-10">
@@ -64,7 +78,7 @@ export default function CustomersPage() {
                             </thead>
 
                             <tbody className="divide-y divide-gray-100">
-                                {customers.length === 0 ? (
+                                {data.length === 0 ? (
                                     <tr>
                                         <td
                                             colSpan={4}
@@ -74,7 +88,7 @@ export default function CustomersPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    customers.map((customer: Customer, index: number) => (
+                                    data.map((customer: Customer, index: number) => (
                                         <tr
                                             key={customer.id}
                                             className={`transition-colors duration-150 hover:bg-indigo-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"
@@ -116,9 +130,9 @@ export default function CustomersPage() {
                     </div>
 
                     {/* Footer */}
-                    {customers.length > 0 && (
+                    {data.length > 0 && (
                         <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-400">
-                            Showing {customers.length} customer{customers.length !== 1 ? "s" : ""}
+                            Showing {data.length} customer{data.length !== 1 ? "s" : ""}
                         </div>
                     )}
                 </div>
